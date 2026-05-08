@@ -1,0 +1,11 @@
+# OmniHand 2025 - PEAK System XCAN-USB FD 自动配置
+# Vendor ID: 0c72, Product ID: 0012
+
+# 设备插入时触发配置
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0c72", ATTRS{idProduct}=="0012", ACTION=="add", \
+    RUN+="/home/ros/bdodsdk/Omnihand-2025-SDK/setup_can.sh", \
+    MODE="0666", GROUP="dialout"
+
+# 设备移除时关闭接口
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0c72", ATTRS{idProduct}=="0012", ACTION=="remove", \
+    RUN+="/sbin/ifconfig can0 down"
