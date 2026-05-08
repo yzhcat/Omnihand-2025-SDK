@@ -16,7 +16,7 @@
 class AGIBOT_EXPORT AgibotHandCanO10 : public AgibotHandO10 {
  public:
   struct Options {
-    std::string can_driver = "zlg";
+    std::string can_driver = "socket";
   };
 
  public:

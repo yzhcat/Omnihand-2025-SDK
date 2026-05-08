@@ -33,13 +33,20 @@ struct convert<AgibotHandCanO10::Options> {
 AgibotHandCanO10::AgibotHandCanO10(unsigned char canfd_id) {
   Options options;
 
-  if (options.can_driver == "zlg") {
+  // 添加默认驱动：优先尝试socket can
+  std::string driver = options.can_driver;
+  if (driver.empty()) {
+    driver = "socket";  // 默认使用socket can
+    std::cout << "[INFO]: No CAN driver specified, using socket CAN as default." << std::endl;
+  }
+  
+  if (driver == "zlg") {
     canfd_device_ = std::make_unique<ZlgUsbcanfdSDK>(canfd_id);
-  } else if (options.can_driver == "socket") {
+  } else if (driver == "socket") {
     canfd_device_ = std::make_unique<CanBusDeviceSocketCan>();
   } else {
     throw std::invalid_argument(
-        "Unsupported CAN driver type: " + options.can_driver +
+        "Unsupported CAN driver type: " + driver +
         ". Only 'zlg' and 'socket' are supported.");
   }
   

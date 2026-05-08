@@ -7,7 +7,7 @@ if [ -d ./build/install ]; then
     rm -rf ./build/install
 fi
 
-cmake -B build \
+uv run cmake -B build \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX=./build/install \
     -DBUILD_PYTHON_BINDING=ON \
