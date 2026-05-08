@@ -31,18 +31,60 @@ OmniHand 灵动款 2025 是一款紧凑型高自由度交互灵巧手，具有`1
 
 可以选择源码编译安装或者预编译包安装。
 
+```bash
+$ whereis python3
+python3: /usr/bin/python3 /usr/lib/python3 /etc/python3 /usr/share/python3 /usr/share/man/man1/python3.1.gz
+$ ll /usr/bin/python3
+lrwxrwxrwx 1 root root 10  6月 25  2025 /usr/bin/python3 -> python3.10*
+
+uv venv --python /usr/bin/python3.10 --system-site-packages
+source .venv/bin/activate
+uv pip install cmake==3.24.0
+```
+
 #### 源码编译安装
+
+
 
 项目根目录下执行以下命令：
 
+
+(跳过)
 ```bash
   ./build.sh -DCMAKE_BUILD_TYPE=Release \
              -DCMAKE_INSTALL_PREFIX=./build/install \
              -DBUILD_PYTHON_BINDING=ON \
              -DBUILD_CPP_EXAMPLES=OFF \
 ```
+直接执行  
+```bash
+source .venv/bin/activate
+source /opt/ros/humble/setup.bash
 
+./build.sh
+```
+-DCMAKE_BUILD_TYPE=Debug              # 调试模式（包含调试信息）
+-DCMAKE_INSTALL_PREFIX=./build/install # 安装路径
+-DBUILD_PYTHON_BINDING=ON             # 构建Python绑定
+-DBUILD_CPP_EXAMPLES=ON               # 构建C++示例
 DBUILD_PYTHON_BINDING 选项用于构建 Python 绑定模块，DBUILD_CPP_EXAMPLES 选项用于构建 C++ 示例代码。
+
+
+```bash
+uv pip install ./build/omnihand_2025_pkg/dist/omnihand_2025_py-0.8.0-cp310-cp310-linux_x86_64.whl
+
+uv pip list
+Package          Version
+---------------- -------
+build            1.5.0
+cmake            3.24.0
+omnihand-2025-py 0.8.0
+packaging        26.2
+pyproject-hooks  1.2.0
+setuptools       82.0.1
+tomli            2.4.1
+wheel            0.47.0
+```
 
 #### 预编译包安装
 
@@ -63,8 +105,12 @@ OmniHand 2025 共 10 个自由度，索引从 1 到 10， 各索引对应的控�
 
 ```bash
 cd python/example
-
-python3 ./demo_set_motor.py
+cat omnihand_config.yaml
+---
+can_driver: socket
+# can_driver: zlg
+---
+python3 ./demo_get_hardware_info.py 
 ```
 
 ## 目录结构

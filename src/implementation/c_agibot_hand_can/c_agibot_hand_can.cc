@@ -33,10 +33,21 @@ struct convert<AgibotHandCanO10::Options> {
 AgibotHandCanO10::AgibotHandCanO10(unsigned char canfd_id) {
   Options options;
 
-  // 添加默认驱动：优先尝试socket can
+  // 尝试从配置文件读取
+  try {
+    YAML::Node config = YAML::LoadFile("omnihand_config.yaml");
+    if (config["can_driver"]) {
+      options.can_driver = config["can_driver"].as<std::string>();
+      std::cout << "[INFO]: Loaded CAN driver from config: " << options.can_driver << std::endl;
+    }
+  } catch (const YAML::Exception& e) {
+    std::cout << "[WARN]: Config file not found or invalid, using default driver: " << options.can_driver << std::endl;
+  }
+  
+  // 使用配置或默认值
   std::string driver = options.can_driver;
   if (driver.empty()) {
-    driver = "socket";  // 默认使用socket can
+    driver = "socket";
     std::cout << "[INFO]: No CAN driver specified, using socket CAN as default." << std::endl;
   }
   
