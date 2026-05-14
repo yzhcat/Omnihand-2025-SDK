@@ -1,65 +1,89 @@
 # Copyright (c) 2023, AgiBot Inc.
 # All rights reserved.
 
-include(FetchContent)
-
 message(STATUS "get serial ...")
 
-set(serial_DOWNLOAD_URL
-    "https://github.com/wjwwood/serial/archive/refs/tags/1.2.1.tar.gz"
-    CACHE STRING "")
+find_package(serial QUIET)
 
-if(serial_LOCAL_SOURCE)
-  FetchContent_Declare(
-    serial
-    SOURCE_DIR ${serial_LOCAL_SOURCE}
-    OVERRIDE_FIND_PACKAGE)
-else()
-  FetchContent_Declare(
-    serial
-    URL ${serial_DOWNLOAD_URL}
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    OVERRIDE_FIND_PACKAGE)
+if(NOT serial_FOUND)
+  include(FetchContent)
+
+  set(FETCHCONTENT_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/_deps)
+
+  set(serial_DOWNLOAD_URL
+      "https://github.com/wjwwood/serial/archive/refs/tags/1.2.1.tar.gz"
+      CACHE STRING "")
+
+  set(_SERIAL_LOCAL_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/_deps/serial-src)
+  if(EXISTS ${_SERIAL_LOCAL_SOURCE}/src/serial.cc)
+    message(STATUS "  using local serial source: ${_SERIAL_LOCAL_SOURCE}")
+    set(serial_SOURCE_DIR ${_SERIAL_LOCAL_SOURCE})
+    set(serial_POPULATED TRUE)
+  else()
+    FetchContent_Declare(
+      serial
+      URL ${serial_DOWNLOAD_URL}
+      DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+
+    function(get_serial)
+      FetchContent_GetProperties(serial)
+      if(NOT serial_POPULATED)
+        FetchContent_Populate(serial)
+        set(serial_SOURCE_DIR ${serial_SOURCE_DIR} PARENT_SCOPE)
+      endif()
+    endfunction()
+
+    get_serial()
+  endif()
+
+  if(NOT TARGET serial::serial AND EXISTS ${serial_SOURCE_DIR}/CMakeLists.txt)
+    set(SERIAL_CMAKE_CONTENT "cmake_minimum_required(VERSION 2.8.3)
+project(serial)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+if(APPLE)
+        find_library(IOKIT_LIBRARY IOKit)
+        find_library(FOUNDATION_LIBRARY Foundation)
 endif()
 
-# Wrap it in a function to restrict the scope of the variables
-function(get_serial)
-  FetchContent_GetProperties(serial)
-  if(NOT serial_POPULATED)
-    FetchContent_Populate(serial)
-    file(READ ${serial_SOURCE_DIR}/CMakeLists.txt SERIAL_TMP_VAR)
+set(serial_SRCS
+    src/serial.cc
+    include/serial/serial.h
+    include/serial/v8stdint.h
+)
+if(APPLE)
+        list(APPEND serial_SRCS src/impl/unix.cc)
+        list(APPEND serial_SRCS src/impl/list_ports/list_ports_osx.cc)
+elseif(UNIX)
+    list(APPEND serial_SRCS src/impl/unix.cc)
+    list(APPEND serial_SRCS src/impl/list_ports/list_ports_linux.cc)
+else()
+    list(APPEND serial_SRCS src/impl/win.cc)
+    list(APPEND serial_SRCS src/impl/list_ports/list_ports_win.cc)
+endif()
 
-    # 1. 注释掉原来的 find_package
-    string(REPLACE "find_package(catkin REQUIRED)" "# find_package(catkin REQUIRED)" SERIAL_TMP_VAR "${SERIAL_TMP_VAR}")
+add_library(serial \${serial_SRCS})
+if(APPLE)
+        target_link_libraries(serial \${FOUNDATION_LIBRARY} \${IOKIT_LIBRARY})
+elseif(UNIX)
+        target_link_libraries(serial rt pthread)
+else()
+        target_link_libraries(serial setupapi)
+endif()
 
-    # 2. 在注释的 find_package 后面添加新的设置
-    string(
-      REPLACE
-        "# find_package(catkin REQUIRED)\n"
-        "# find_package(catkin REQUIRED)\nset(CMAKE_CXX_STANDARD 11)\nset(CMAKE_CXX_STANDARD_REQUIRED True)\nset(TARGET_NAME \${PROJECT_NAME})\nset(rt_LIBRARIES rt)\nset(pthread_LIBRARIES pthread)\n"
-        SERIAL_TMP_VAR
-        "${SERIAL_TMP_VAR}")
+include_directories(include)
 
-    # 3. 注释掉 catkin_package 相关内容
-    string(REPLACE "catkin_package(" "# catkin_package(" SERIAL_TMP_VAR "${SERIAL_TMP_VAR}")
+install(TARGETS serial
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+)
 
-    string(REPLACE "LIBRARIES \${PROJECT_NAME}" "    # LIBRARIES \${PROJECT_NAME}" SERIAL_TMP_VAR "${SERIAL_TMP_VAR}")
-
-    string(REPLACE "DEPENDS rt pthread\n    )" "    # DEPENDS rt pthread\n    #)" SERIAL_TMP_VAR "${SERIAL_TMP_VAR}")
-
-    string(REPLACE "INCLUDE_DIRS include\n    )" "    # INCLUDE_DIRS include\n    #)" SERIAL_TMP_VAR "${SERIAL_TMP_VAR}")
-    string(REPLACE "INCLUDE_DIRS include" "    # INCLUDE_DIRS include" SERIAL_TMP_VAR "${SERIAL_TMP_VAR}")
-
-    # 4. 修改安装路径
-    string(REPLACE "ARCHIVE DESTINATION \${CATKIN_PACKAGE_LIB_DESTINATION}" "ARCHIVE DESTINATION lib" SERIAL_TMP_VAR "${SERIAL_TMP_VAR}")
-    string(REPLACE "LIBRARY DESTINATION \${CATKIN_PACKAGE_LIB_DESTINATION}" "LIBRARY DESTINATION lib" SERIAL_TMP_VAR "${SERIAL_TMP_VAR}")
-    string(REPLACE "DESTINATION \${CATKIN_GLOBAL_INCLUDE_DESTINATION}/serial" "DESTINATION include/serial" SERIAL_TMP_VAR "${SERIAL_TMP_VAR}")
-
-    # 写入修改后的内容
-    file(WRITE ${serial_SOURCE_DIR}/CMakeLists.txt "${SERIAL_TMP_VAR}")
-
-    add_subdirectory(${serial_SOURCE_DIR} ${serial_BINARY_DIR})
+install(FILES include/serial/serial.h include/serial/v8stdint.h
+  DESTINATION include/serial)
+")
+    file(WRITE ${serial_SOURCE_DIR}/CMakeLists.txt "${SERIAL_CMAKE_CONTENT}")
+    add_subdirectory(${serial_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/serial-build)
   endif()
-endfunction()
-
-get_serial()
+endif()

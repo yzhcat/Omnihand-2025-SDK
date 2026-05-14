@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <unistd.h>
 
 #define READ_BYTES_LIMIT 256
 #define DOUBLE_CHECK 128

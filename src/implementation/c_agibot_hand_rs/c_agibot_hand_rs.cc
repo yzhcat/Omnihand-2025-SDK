@@ -4,6 +4,7 @@
 #include "c_agibot_hand_rs.h"
 #include <cstring>
 #include <iostream>
+#include <unistd.h>
 #include "rs_485_device/crc16.h"
 
 #define CANID_WRITE_FLAG 0x01

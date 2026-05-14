@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.16)
 project(omni_hand_2025 CXX)
 
 # Set cmake path
@@ -7,6 +7,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Some option
 option(BUILD_PYTHON_BINDING "Build Python binding" ON)
 option(BUILD_CPP_EXAMPLES "Build CPP examples" ON)
+option(BUILD_ROS_NODE "Build ROS2 node" OFF)
+option(USE_SOCKET_CAN "Use SocketCAN instead of ZLG USB-CAN" ON)
 
 # Some necessary settings
 set(CMAKE_CXX_STANDARD 20)
@@ -68,12 +70,11 @@ if(BUILD_PYTHON_BINDING)
 endif()
 
 add_subdirectory(src)
-add_subdirectory(node)
+
+if(BUILD_ROS_NODE)
+  add_subdirectory(node)
+endif()
 
 if(BUILD_PYTHON_BINDING)
   add_subdirectory(python)
-endif()
-
-if(BUILD_CPP_EXAMPLES)
-  add_subdirectory(examples)
 endif()

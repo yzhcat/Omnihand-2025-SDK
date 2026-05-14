@@ -37,9 +37,11 @@ python3: /usr/bin/python3 /usr/lib/python3 /etc/python3 /usr/share/python3 /usr/
 $ ll /usr/bin/python3
 lrwxrwxrwx 1 root root 10  6月 25  2025 /usr/bin/python3 -> python3.10*
 
-uv venv --python /usr/bin/python3.10 --system-site-packages
+uv venv -p 3.10 --system-site-packages
 source .venv/bin/activate
 uv pip install cmake==3.24.0
+uv pip install pybind11 pybind11-global
+uv pip install build setuptools wheel
 ```
 
 #### 源码编译安装
@@ -59,7 +61,7 @@ uv pip install cmake==3.24.0
 直接执行  
 ```bash
 source .venv/bin/activate
-source /opt/ros/humble/setup.bash
+# source /opt/ros/humble/setup.bash
 
 ./build.sh
 ```
@@ -71,7 +73,7 @@ DBUILD_PYTHON_BINDING 选项用于构建 Python 绑定模块，DBUILD_CPP_EXAMPL
 
 
 ```bash
-uv pip install ./build/omnihand_2025_pkg/dist/omnihand_2025_py-0.8.0-cp310-cp310-linux_x86_64.whl
+uv pip install ./build/omnihand_2025_pkg/dist/omnihand_2025_py-0.8.0-cp310-cp310-linux_aarch64.whl
 
 uv pip list
 Package          Version
@@ -80,6 +82,8 @@ build            1.5.0
 cmake            3.24.0
 omnihand-2025-py 0.8.0
 packaging        26.2
+pybind11         3.0.4
+pybind11-global  3.0.4
 pyproject-hooks  1.2.0
 setuptools       82.0.1
 tomli            2.4.1

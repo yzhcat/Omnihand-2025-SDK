@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <thread>
 #include <vector>
 #include "proto.h"
