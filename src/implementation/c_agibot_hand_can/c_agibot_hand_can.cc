@@ -51,9 +51,7 @@ AgibotHandCanO10::AgibotHandCanO10(unsigned char canfd_id) {
     std::cout << "[INFO]: No CAN driver specified, using socket CAN as default." << std::endl;
   }
   
-  if (driver == "zlg") {
-    canfd_device_ = std::make_unique<ZlgUsbcanfdSDK>(canfd_id);
-  } else if (driver == "socket") {
+  if (driver == "socket") {
     canfd_device_ = std::make_unique<CanBusDeviceSocketCan>();
   } else {
     throw std::invalid_argument(

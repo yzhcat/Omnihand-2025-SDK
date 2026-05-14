@@ -37,11 +37,10 @@ python3: /usr/bin/python3 /usr/lib/python3 /etc/python3 /usr/share/python3 /usr/
 $ ll /usr/bin/python3
 lrwxrwxrwx 1 root root 10  6月 25  2025 /usr/bin/python3 -> python3.10*
 
-uv venv -p 3.10 --system-site-packages
+uv venv -p 3.8 --system-site-packages
 source .venv/bin/activate
 uv pip install cmake==3.24.0
 uv pip install pybind11 pybind11-global
-uv pip install build setuptools wheel
 ```
 
 #### 源码编译安装
@@ -73,6 +72,11 @@ DBUILD_PYTHON_BINDING 选项用于构建 Python 绑定模块，DBUILD_CPP_EXAMPL
 
 
 ```bash
+uv pip install build setuptools wheel
+sudo apt update
+sudo apt install python3.8-venv
+./build.sh
+
 uv pip install ./build/omnihand_2025_pkg/dist/omnihand_2025_py-0.8.0-cp310-cp310-linux_aarch64.whl
 
 uv pip list
@@ -88,6 +92,20 @@ pyproject-hooks  1.2.0
 setuptools       82.0.1
 tomli            2.4.1
 wheel            0.47.0
+
+
+3.8
+build              1.2.2.post1
+cmake              3.24.0
+importlib-metadata 8.5.0
+packaging          26.2
+pybind11           3.0.4
+pybind11-global    3.0.4
+pyproject-hooks    1.2.0
+setuptools         75.3.4
+tomli              2.4.1
+wheel              0.45.1
+zipp               3.20.2
 ```
 
 #### 预编译包安装

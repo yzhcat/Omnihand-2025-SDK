@@ -4,10 +4,8 @@
 file(GLOB BASE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cc ${CMAKE_CURRENT_SOURCE_DIR}/kinematics_solver/*.cc)
 
 file(GLOB IMPLEMENTATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/implementation/c_agibot_hand_rs/*.cc)
-if(NOT USE_SOCKET_CAN)
-  file(GLOB CAN_IMPL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/implementation/c_agibot_hand_can/*.cc)
-  list(APPEND IMPLEMENTATION_SOURCES ${CAN_IMPL_SOURCES})
-endif()
+file(GLOB CAN_IMPL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/implementation/c_agibot_hand_can/*.cc)
+list(APPEND IMPLEMENTATION_SOURCES ${CAN_IMPL_SOURCES})
 
 file(GLOB CAN_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/can_bus_device/*.cc)
 if(NOT USE_SOCKET_CAN)
@@ -20,6 +18,10 @@ list(APPEND CAN_SOURCES ${SOCKET_CAN_SOURCES})
 file(GLOB RS485_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/rs_485_device/*.cc)
 
 add_library(omnihand2025 SHARED ${BASE_SOURCES} ${IMPLEMENTATION_SOURCES} ${CAN_SOURCES} ${RS485_SOURCES})
+
+if(USE_SOCKET_CAN)
+  target_compile_definitions(omnihand2025 PRIVATE USE_SOCKET_CAN)
+endif()
 
 target_include_directories(
   omnihand2025
@@ -57,9 +59,7 @@ install(FILES can_bus_device/c_can_bus_device.h DESTINATION ${CMAKE_INSTALL_PREF
 
 install(FILES kinematics_solver/kinematics_solver.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/kinematics_solver)
 
-if(NOT USE_SOCKET_CAN)
-  install(FILES implementation/c_agibot_hand_can/c_agibot_hand_can.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/implementation/c_agibot_hand_can)
-endif()
+install(FILES implementation/c_agibot_hand_can/c_agibot_hand_can.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/implementation/c_agibot_hand_can)
 
 install(FILES implementation/c_agibot_hand_rs/c_agibot_hand_rs.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/implementation/c_agibot_hand_rs)
 
