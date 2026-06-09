@@ -21,7 +21,11 @@ sudo udevadm trigger
 ```bash
 sudo visudo
 ```
+
 添加以下内容：
+
+```bash
 # OmniHand CAN配置免密码
 %sudo ALL=(ALL) NOPASSWD: /sbin/ifconfig can0 *
 %sudo ALL=(ALL) NOPASSWD: /sbin/ip link set can0 *
+```
