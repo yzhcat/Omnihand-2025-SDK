@@ -24,6 +24,7 @@
 class CanBusDeviceSocketCan : public CanBusDeviceBase {
  public:
   CanBusDeviceSocketCan();
+  explicit CanBusDeviceSocketCan(const std::string& channel = "can0");
 
   ~CanBusDeviceSocketCan() final;
 
@@ -40,6 +41,7 @@ class CanBusDeviceSocketCan : public CanBusDeviceBase {
    * @brief 套接字
    */
   int fd_sock_{};
+  std::string if_name_;   // 新增成员，存储接口名
 };
 
 #endif  // C_CAN_BUS_DEVICE_SOCKET_CAN_H

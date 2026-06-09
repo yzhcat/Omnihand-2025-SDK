@@ -21,7 +21,15 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-CanBusDeviceSocketCan::CanBusDeviceSocketCan() {
+
+// 无参构造：委托给带参构造，使用默认 "can0"
+CanBusDeviceSocketCan::CanBusDeviceSocketCan()
+    : CanBusDeviceSocketCan("can0") {
+}
+
+// 带参构造：真正打开指定接口
+CanBusDeviceSocketCan::CanBusDeviceSocketCan(const std::string& channel)
+    : if_name_(channel) {
   /*打开设备*/
   if (CanBusDeviceSocketCan::OpenDevice() == -1) {
     return;
@@ -54,9 +62,9 @@ int CanBusDeviceSocketCan::OpenDevice() {
   int flags = fcntl(fd_sock_, F_GETFL, 0);
   fcntl(fd_sock_, F_SETFL, flags | O_NONBLOCK);
 
-  /*指定can0设备，获取设备索引*/
+  /*指定can设备，获取设备索引*/
   struct ifreq ifr {};
-  strcpy(ifr.ifr_name, "can0");
+  strcpy(ifr.ifr_name, if_name_.c_str());
   ioctl(fd_sock_, SIOCGIFINDEX, &ifr);
 
   /*地址*/

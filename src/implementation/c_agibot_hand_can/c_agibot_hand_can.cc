@@ -52,7 +52,8 @@ AgibotHandCanO10::AgibotHandCanO10(unsigned char canfd_id) {
   }
   
   if (driver == "socket") {
-    canfd_device_ = std::make_unique<CanBusDeviceSocketCan>();
+    std::string can_iface = (canfd_id == 1) ? "can0" :"can1";
+    canfd_device_ = std::make_unique<CanBusDeviceSocketCan>(can_iface);
   } else {
     throw std::invalid_argument(
         "Unsupported CAN driver type: " + driver +
