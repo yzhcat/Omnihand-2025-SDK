@@ -33,15 +33,22 @@ struct convert<AgibotHandO10::HardwareConf> {
 };
 }  // namespace YAML
 
+
+std::unique_ptr<AgibotHandO10> AgibotHandO10::createHand(
+    unsigned char device_id,
+    const std::string& canfd_iface,
+    EHandType hand_type)
+{
+    auto hand = std::make_unique<AgibotHandCanO10>(canfd_iface);
+    hand->Reset(device_id, hand_type);
+    return hand;
+}
+
 std::unique_ptr<AgibotHandO10> AgibotHandO10::createHand(
     unsigned char device_id,
     unsigned char canfd_id,
     EHandType hand_type) {
-  std::unique_ptr<AgibotHandO10> hand;
-
-  hand = std::make_unique<AgibotHandCanO10>(canfd_id);
-
-  hand->Reset(device_id, hand_type);
-
-  return hand;
+    // 将数字 ID 转换为接口名称（根据你的业务逻辑）
+    std::string iface = (canfd_id == 1) ? "can0" : "can1";
+    return createHand(device_id, iface, hand_type);
 }

@@ -30,36 +30,42 @@ struct convert<AgibotHandCanO10::Options> {
 };
 }  // namespace YAML
 
-AgibotHandCanO10::AgibotHandCanO10(unsigned char canfd_id) {
-  Options options;
 
-  // 尝试从配置文件读取
-  try {
-    YAML::Node config = YAML::LoadFile("omnihand_config.yaml");
-    if (config["can_driver"]) {
-      options.can_driver = config["can_driver"].as<std::string>();
-      std::cout << "[INFO]: Loaded CAN driver from config: " << options.can_driver << std::endl;
-    }
-  } catch (const YAML::Exception& e) {
-    std::cout << "[WARN]: Config file not found or invalid, using default driver: " << options.can_driver << std::endl;
-  }
+AgibotHandCanO10::AgibotHandCanO10(unsigned char canfd_id)
+: AgibotHandCanO10((canfd_id == 1) ? "can0" : "can1")  {
+
+}
+
+AgibotHandCanO10::AgibotHandCanO10(const std::string& canfd_iface) {
+  // Options options;
+
+  // // 尝试从配置文件读取
+  // try {
+  //   YAML::Node config = YAML::LoadFile("omnihand_config.yaml");
+  //   if (config["can_driver"]) {
+  //     options.can_driver = config["can_driver"].as<std::string>();
+  //     std::cout << "[INFO]: Loaded CAN driver from config: " << options.can_driver << std::endl;
+  //   }
+  // } catch (const YAML::Exception& e) {
+  //   std::cout << "[WARN]: Config file not found or invalid, using default driver: " << options.can_driver << std::endl;
+  // }
   
-  // 使用配置或默认值
-  std::string driver = options.can_driver;
-  if (driver.empty()) {
-    driver = "socket";
-    std::cout << "[INFO]: No CAN driver specified, using socket CAN as default." << std::endl;
-  }
+  // // 使用配置或默认值
+  // std::string driver = options.can_driver;
+  // if (driver.empty()) {
+  //   driver = "socket";
+  //   std::cout << "[INFO]: No CAN driver specified, using socket CAN as default." << std::endl;
+  // }
   
-  if (driver == "socket") {
-    std::string can_iface = (canfd_id == 1) ? "can0" :"can1";
-    canfd_device_ = std::make_unique<CanBusDeviceSocketCan>(can_iface);
-  } else {
-    throw std::invalid_argument(
-        "Unsupported CAN driver type: " + driver +
-        ". Only 'zlg' and 'socket' are supported.");
-  }
-  
+  // if (driver == "socket") {
+  //   std::string can_iface = (canfd_id == 1) ? "can0" :"can1";
+  //   canfd_device_ = std::make_unique<CanBusDeviceSocketCan>(can_iface);
+  // } else {
+  //   throw std::invalid_argument(
+  //       "Unsupported CAN driver type: " + driver +
+  //       ". Only 'zlg' and 'socket' are supported.");
+  // }
+  canfd_device_ = std::make_unique<CanBusDeviceSocketCan>(canfd_iface);
   if (!canfd_device_->IsInit()) {
     is_init_ = false;
     return;

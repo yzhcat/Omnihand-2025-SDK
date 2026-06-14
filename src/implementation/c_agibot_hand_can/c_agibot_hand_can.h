@@ -21,6 +21,7 @@ class AGIBOT_EXPORT AgibotHandCanO10 : public AgibotHandO10 {
 
  public:
   explicit AgibotHandCanO10(unsigned char canfd_id);
+  explicit AgibotHandCanO10(const std::string& canfd_iface);
 
   ~AgibotHandCanO10() override = default;
 
