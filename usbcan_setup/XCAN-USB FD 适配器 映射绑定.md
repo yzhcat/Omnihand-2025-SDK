@@ -184,5 +184,180 @@ cat /sys/class/net/can-right/peak_usb/can_channel_id  # 应为 00000002
 
 
 
+# LINUX pcan
+
+4. **验证写入结果**
+
+将两块适配器插入 Linux 电脑，执行：
+
+```Bash
+lsmod | grep can
+----------
+pcan                  208896  0
+can_dev                32768  1 pcan
+```
+
+**PEAK 官方 ****`pcan`****字符驱动**（`lsmod`里的 `pcan`模块）。与`peak_usb`驱动暴露信息的方式完全不同——
+
+- `peak_usb`→ 走 socketcan 原生路径 → 有 `peak_usb/can_channel_id`
+
+- `pcan`驱动 → 走 `/proc/pcan`\+ `/dev/pcanX`→ **没有那个 sysfs 节点**
+
+
+
+使用 `cat /proc/pcan` 命令
+
+```Bash
+cat /proc/pcan
+---------------
+*------------- PEAK-System CAN interfaces (www.peak-system.com) -------------
+*------------- Release_20220929_n (8.15.2) Jun  9 2026 11:22:34 --------------
+*------------------- [mod] [isa] [pci] [pec] [usb] [net] --------------------
+*--------------------- 2 interfaces @ major 507 found -----------------------
+*n -type- -ndev- --base-- irq --btr- --read-- --write- --irqs-- -errors- status
+32  usbfd   can0 ffffffff 002 0x001c 00000000 00000000 00000000 00000000 0x0000
+33  usbfd   can1 ffffffff 001 0x001c 00000000 00000000 00000000 00000000 0x0000
+```
+
+其中irq的下方 显示的就是**Device ID**
+
+应分别显示 `001`和 `002`
+
+## 二、编写重命名脚本 
+
+创建脚本 `fix-can-names-pcan.sh`
+
+### 脚本内容 
+
+```Bash
+#!/bin/bash
+# 通过 /proc/pcan 的 irq 列(=Device Number)区分左右手
+
+# 等 can 接口出现
+for i in $(seq 1 50); do
+  if [ -f /proc/pcan ] && ls /sys/class/net/can* >/dev/null 2>&1; then
+    grep -q "usbfd.*can" /proc/pcan 2>/dev/null && break
+  fi
+  sleep 0.2
+done
+
+[ ! -f /proc/pcan ] && echo "[fix-can] /proc/pcan not found, abort" >&2 && exit 1
+
+renamed_left=0
+renamed_right=0
+
+while read -r n type ndev base irq rest; do
+  [ "$type" != "usbfd" ] && continue
+  [[ ! "$ndev" =~ ^can[0-9] ]] && continue
+
+  devnum="$irq"
+  echo "[fix-can] $ndev -> Device Number=$devnum"
+
+  case "$devnum" in
+    001|1)
+      if [ "$renamed_left" -eq 0 ]; then
+        echo "[fix-can] Renaming $ndev -> can-left"
+        ip link set "$ndev" down
+        if ip link set "$ndev" name can-left; then
+          renamed_left=1
+        else
+          echo "[fix-can] ERROR: failed to rename $ndev to can-left" >&2
+        fi
+      fi
+      ;;
+    002|2)
+      if [ "$renamed_right" -eq 0 ]; then
+        echo "[fix-can] Renaming $ndev -> can-right"
+        ip link set "$ndev" down
+        if ip link set "$ndev" name can-right; then
+          renamed_right=1
+        else
+          echo "[fix-can] ERROR: failed to rename $ndev to can-right" >&2
+        fi
+      fi
+      ;;
+    *)
+      echo "[fix-can] WARNING: unknown Device Number '$devnum' on $ndev" >&2
+      ;;
+  esac
+done < <(grep "usbfd" /proc/pcan)
+
+# 如果改名成功，把接口 up 起来（可选）
+for iface in can-left can-right; do
+  if ip link show "$iface" >/dev/null 2>&1; then
+    ip link set "$iface" up type can bitrate 1000000 2>/dev/null || true
+  fi
+done
+```
+
+
+
+### 赋予执行权限 
+
+```Bash
+chmod +x fix-can-names-pcan.sh
+```
+
+---
+
+## 三、验证 
+
+### 测试 
+
+将两块适配器插入 Linux 电脑
+
+```Bash
+sudo ./fix-can-names-pcan.sh
+```
+
+输出
+
+```Bash
+[fix-can] can0 -> Device Number=002
+[fix-can] Renaming can0 -> can-right
+[fix-can] can1 -> Device Number=001
+[fix-can] Renaming can1 -> can-left
+```
+
+### 检查结果 
+
+```Bash
+cat /proc/pcan
+-------------
+*------------- PEAK-System CAN interfaces (www.peak-system.com) -------------
+*------------- Release_20220929_n (8.15.2) Jun  9 2026 11:22:34 --------------
+*------------------- [mod] [isa] [pci] [pec] [usb] [net] --------------------
+*--------------------- 2 interfaces @ major 507 found -----------------------
+*n -type- -ndev- --base-- irq --btr- --read-- --write- --irqs-- -errors- status
+32  usbfd can-left ffffffff 002 0x001c 00000000 00000000 00000000 00000000 0x0000
+33  usbfd can-right ffffffff 001 0x001c 00000000 00000000 00000000 00000000 0x0000
+```
+
+应输出`can-left` 001 和 `can-right` 002。
+
+---
+
+> ```SQL
+> ./canset_pcan.sh
+>  cat /proc/pcan
+> -------------
+> *------------- PEAK-System CAN interfaces (www.peak-system.com) -------------
+> *------------- Release_20220929_n (8.15.2) Jun  9 2026 11:22:34 --------------
+> *------------------- [mod] [isa] [pci] [pec] [usb] [net] --------------------
+> *--------------------- 2 interfaces @ major 507 found -----------------------
+> *n -type- -ndev- --base-- irq --btr- --read-- --write- --irqs-- -errors- status
+> 32  usbfd can-left ffffffff 002 0x001c 00000000 00000000 00000000 00000000 0x0000
+> 33  usbfd can-right ffffffff 001 0x001c 00000000 00000000 00000000 00000000 0x0000
+> ```
+> 
+> 
+
+---
+
+## 后续使用说明 
+
+- 应用程序中统一使用接口名 `can-left`和 `can-right`，不再依赖 `can0`/`can1`。
+
+
 
 
